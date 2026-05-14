@@ -28,6 +28,7 @@ class ZabbixBase:
         password: str,
         api_version: int = 7,
         item_transforms: dict | None = None,
+        ignore_private_items: bool = True,
     ):
         self.server_address = url
         self.api_url = f"{url}/api_jsonrpc.php"
@@ -36,5 +37,6 @@ class ZabbixBase:
         self.api_key = ""
         self.api_version = api_version
         self.item_transforms = item_transforms or {}
+        self.ignore_private_items = ignore_private_items
         
    

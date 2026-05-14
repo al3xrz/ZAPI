@@ -122,8 +122,8 @@ class APIClient:
                 allow_redirects=False  # Сначала отключаем авторедиректы
             ) as resp:
                 
-                print(f"🔍 POST Login Response: {resp.status}")
-                print(f"🔍 Location Header: {resp.headers.get('Location', 'None')}")
+                logger.debug("POST login response: %s", resp.status)
+                logger.debug("Location header: %s", resp.headers.get('Location', 'None'))
                 
                 # Если есть редирект - следуем за ним
                 if resp.status in [301, 302, 303]:
@@ -132,7 +132,7 @@ class APIClient:
                         if not redirect_url.startswith('http'):
                             redirect_url = urljoin(self.base_url, redirect_url)
                         
-                        print(f"🔍 Following redirect to: {redirect_url}")
+                        logger.debug("Following redirect to: %s", redirect_url)
                         async with self.session.get(
                             redirect_url, 
                             ssl=False, 
@@ -154,14 +154,12 @@ class APIClient:
             cookies = self.session.cookie_jar.filter_cookies(self.base_url)
             zbx_session_cookie = cookies.get('zbx_session')
             
-            print("=" * 50)
-            print("🔍 FINAL LOGIN RESULT:")
-            print(f"   Final URL: {final_url}")
-            print(f"   Final Status: {final_status}")
-            print(f"   zbx_session present: {zbx_session_cookie is not None}")
+            logger.debug("Final login URL: %s", final_url)
+            logger.debug("Final login status: %s", final_status)
+            logger.debug("zbx_session present: %s", zbx_session_cookie is not None)
             
             if zbx_session_cookie:
-                print(f"   zbx_session value: {zbx_session_cookie.value}")
+                logger.debug("zbx_session value: %s", zbx_session_cookie.value)
             
             # Улучшенная проверка успешного логина
             success_indicators = [
@@ -184,23 +182,23 @@ class APIClient:
 
             # Проверяем наличие сообщения об ошибке в ответе
             if 'incorrect' in response_html.lower():
-                print("❌ Ошибка: Неправильное имя пользователя или пароль")
+                logger.warning("Ошибка веб-логина: неправильное имя пользователя или пароль")
                 return False
             
             if any(success_indicators):
-                print("✅ Login successful based on page content")
+                logger.info("Web login successful based on page content")
                 return True
             elif zbx_session_cookie and not any(failure_indicators):
-                print("✅ Login successful based on session cookie")
+                logger.info("Web login successful based on session cookie")
                 return True
             else:
-                print("❌ Login failed - no success indicators found")
-                print(f"   Success indicators: {[ind for ind in success_indicators if ind]}")
-                print(f"   Failure indicators: {[ind for ind in failure_indicators if ind]}")
+                logger.warning("Web login failed: no success indicators found")
+                logger.debug("Success indicators: %s", [ind for ind in success_indicators if ind])
+                logger.debug("Failure indicators: %s", [ind for ind in failure_indicators if ind])
                 return False
 
         except Exception as e:
-            print(f"❌ Error during web login: {str(e)}")
+            logger.error("Error during web login: %s", str(e))
             return False
 
 
@@ -221,24 +219,24 @@ class APIClient:
             for test_url in test_urls:
                 url = urljoin(self.base_url, test_url)
                 async with self.session.get(url, ssl=False, allow_redirects=False) as resp:
-                    print(f"🔍 Session check {test_url}: Status {resp.status}")
+                    logger.debug("Session check %s: status %s", test_url, resp.status)
                     
                     # Если не редирект на логин - сессия валидна
                     if resp.status == 200:
                         html = await resp.text()
                         if 'login' not in html.lower() and 'sign in' not in html.lower():
-                            print(f"✅ Session valid (accessed {test_url})")
+                            logger.info("Session valid: accessed %s", test_url)
                             return True
                     elif resp.status in [301, 302]:
                         location = resp.headers.get('Location', '')
                         if 'index.php' in location and 'login' in location:
-                            print(f"❌ Session invalid (redirected to login from {test_url})")
+                            logger.warning("Session invalid: redirected to login from %s", test_url)
                             return False
             
             return False
             
         except Exception as e:
-            print(f"❌ Session check error: {str(e)}")
+            logger.error("Session check error: %s", str(e))
             return False
 
 
@@ -263,7 +261,7 @@ class APIClient:
             'height': height,
             'profileIdx': "web.item.graph.filter"
         }
-        print("параметры запроса", params)
+        logger.debug("Chart request params: %s", params)
         
         # Добавляем itemids в параметры (правильный формат для Zabbix)
         for i, itemid in enumerate(itemids):
@@ -277,7 +275,7 @@ class APIClient:
                 content_type = resp.headers.get('Content-Type', '')
                 if 'text/html' in content_type:
                     response_text = await resp.text()
-                    print(response_text)
+                    logger.debug("Unexpected HTML chart response: %s", response_text)
                     if 'login' in response_text.lower():
                         raise RuntimeError("Session expired - redirected to login page")
                     else:
@@ -295,19 +293,19 @@ class APIClient:
     async def debug_session(self):
         """Отладочная функция для проверки состояния сессии"""
         if not self.session:
-            print("❌ Session not initialized")
+            logger.warning("Session not initialized")
             return
             
         cookies = self.session.cookie_jar.filter_cookies(self.base_url)
-        print("📋 Current cookies:")
+        logger.debug("Current cookies:")
         for name, cookie in cookies.items():
-            print(f"  {name}: {cookie.value}")
+            logger.debug("  %s: %s", name, cookie.value)
         
         # Проверяем доступ к дашборду
         dashboard_url = urljoin(self.base_url, '/zabbix.php?action=dashboard.view')
         async with self.session.get(dashboard_url, ssl=False) as resp:
-            print(f"🏠 Dashboard access: {resp.status}")
+            logger.debug("Dashboard access: %s", resp.status)
             if resp.status == 200:
-                print("✅ Session is valid")
+                logger.info("Session is valid")
             else:
-                print("❌ Session is invalid")
+                logger.warning("Session is invalid")

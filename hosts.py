@@ -1,6 +1,11 @@
 # zabbix_api/hosts.py
-from .errors.exceptions import ZabbixError, ZabbixNotFoundError
+import logging
+
+from .errors.exceptions import ZabbixNotFoundError
 from .http.http_api import APIClient
+from .utils.response import get_zabbix_result
+
+logger = logging.getLogger(__name__)
 
 
 class ZabbixHostsMixin():
@@ -44,10 +49,7 @@ class ZabbixHostsMixin():
         }
         async with APIClient(self.api_url) as client:
             response = await client.post("", payload)
-            if "result" in response:
-                return response["result"]
-            else:
-                raise ZabbixError(response["error"]["data"])
+            return get_zabbix_result(response, payload)
 
     async def _get_host_by_id(self, hostid: int | str) -> dict:
         """
@@ -63,6 +65,7 @@ class ZabbixHostsMixin():
                     "macro",
                     "value"
                 ],
+                "selectTags": ["tag", "value"],
                 "selectInventory": ["location", "location_lat", "location_lon", "note"],
                 "selectItems": [
                     "key_",
@@ -80,15 +83,11 @@ class ZabbixHostsMixin():
 
         async with APIClient(self.api_url) as client:
             response = await client.post("", payload)
-            print(response)
-            if "result" in response:
-                if len(response["result"][0]) != 0:
-                    return response["result"][0]
-                else:
-                    raise ZabbixNotFoundError(
-                        f"Host with id={hostid} not found")
-            else:
-                raise ZabbixError(response["error"]["data"])
+            logger.debug("host.get response: %s", response)
+            result = get_zabbix_result(response, payload)
+            if len(result) != 0:
+                return result[0]
+            raise ZabbixNotFoundError(f"Host with id={hostid} not found")
 
 
 

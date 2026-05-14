@@ -1,4 +1,11 @@
-from .errors.exceptions import ZabbixConnectionError, ZabbixError, ZabbixNotFoundError
+from .errors.exceptions import (
+    ZabbixAPIError,
+    ZabbixAuthError,
+    ZabbixBaseException,
+    ZabbixConnectionError,
+    ZabbixError,
+    ZabbixNotFoundError,
+)
 
 from .base import ZabbixBase
 from .auth import ZabbixAuthMixin

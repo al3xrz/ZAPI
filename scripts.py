@@ -1,6 +1,7 @@
 # zabbix_api/scripts.py
 from .base import ZabbixBase
 from .http.http_api import APIClient
+from .utils.response import get_zabbix_result
 
 
 class ZabbixScriptsMixin():
@@ -21,7 +22,7 @@ class ZabbixScriptsMixin():
         }
         async with APIClient(self.api_url) as client:
             response = await client.post("", payload)
-            return response["result"]
+            return get_zabbix_result(response, payload)
 
     async def execute_script(self, hostid: int | str, scriptid: int | str):
         """
@@ -40,4 +41,4 @@ class ZabbixScriptsMixin():
 
         async with APIClient(self.api_url) as client:
             response = await client.post("", payload)
-            return response["result"]
+            return get_zabbix_result(response, payload)

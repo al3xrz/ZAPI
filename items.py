@@ -1,7 +1,8 @@
 # zabbix_api/items.py
 from .base import ZabbixBase
-from .errors.exceptions import ZabbixError, ZabbixNotFoundError
+from .errors.exceptions import ZabbixNotFoundError
 from .http.http_api import APIClient
+from .utils.response import get_zabbix_result
 import time
 
 
@@ -25,14 +26,10 @@ class ZabbixItemsMixin():
 
         async with APIClient(self.api_url) as client:
             response = await client.post("", payload)
-            if "result" in response:
-                if len(response["result"]) != 0:
-                    return response["result"]
-                else:
-                    raise ZabbixNotFoundError(
-                        f"Items for hostid={hostid} not found")
-            else:
-                raise ZabbixError(response["error"]["data"])
+            result = get_zabbix_result(response, payload)
+            if len(result) != 0:
+                return result
+            raise ZabbixNotFoundError(f"Items for hostid={hostid} not found")
 
 
 
@@ -56,7 +53,7 @@ class ZabbixItemsMixin():
         }
         async with APIClient(self.api_url) as client:
             response = await client.post("", payload)
-            return response["result"][0]
+            return get_zabbix_result(response, payload)[0]
 
     async def get_history(self,
                           itemid: int | str,
@@ -85,9 +82,7 @@ class ZabbixItemsMixin():
 
         async with APIClient(self.api_url) as client:
             response = await client.post("", payload)
-            if "error" in response:
-                raise ZabbixError("Error retrieving history")
-            return response["result"]
+            return get_zabbix_result(response, payload)
 
     
     
@@ -116,4 +111,4 @@ class ZabbixItemsMixin():
 
         async with APIClient(self.api_url) as client:
             response = await client.post("", payload)
-            return response["result"]
+            return get_zabbix_result(response, payload)

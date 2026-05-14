@@ -1,8 +1,13 @@
 # zabbix_api/graphs.py
+import logging
+
 from .base import ZabbixBase
 from .http.http_api import APIClient
 from .errors.exceptions import ZabbixAuthError, ZabbixConnectionError, ZabbixError, ZabbixNotFoundError
+from .utils.response import get_zabbix_result
 from typing import List, Dict
+
+logger = logging.getLogger(__name__)
 
 
 class ZabbixGraphsMixin():
@@ -20,9 +25,8 @@ class ZabbixGraphsMixin():
         }
         async with APIClient(self.api_url) as client:
             response = await client.post("", payload)
-            print("response in get_graphs", response)
-            if "result" in response:
-                return response["result"]
+            logger.debug("graph.get response: %s", response)
+            return get_zabbix_result(response, payload)
 
     async def get_graph_values(self, graphids):
         payload = {
@@ -38,9 +42,8 @@ class ZabbixGraphsMixin():
         }
         async with APIClient(self.api_url) as client:
             response = await client.post("", payload)
-            print("response in get_graphs", response)
-            if "result" in response:
-                return response["result"]
+            logger.debug("graphitem.get response: %s", response)
+            return get_zabbix_result(response, payload)
 
     async def get_chart(self, itemid: int | str, time_from: str = 'now-7d', time_till: str = 'now', width: int | str = 1024, height: int | str = 200) -> bytes:
         """
@@ -69,7 +72,7 @@ class ZabbixGraphsMixin():
                 height=height
             )
             
-            print("✅ Chart successfully retrieved")
+            logger.info("Chart successfully retrieved")
             return chart_image
 
     async def get_charts(self, itemids: List[int | str], time_from='now-1h', time_till='now', width=800, height=200) -> Dict[str, bytes]:
@@ -93,9 +96,4 @@ class ZabbixGraphsMixin():
                     height=height
                 )
                 result[itemid] = chart_image
-
-            # Сохраняем график в файл
-            # with open(file_name, 'wb') as f:
-            #     f.write(chart_image)
-            # print("✅ График успешно сохранен как chart.png")
             return result

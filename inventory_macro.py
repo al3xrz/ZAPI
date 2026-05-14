@@ -1,6 +1,7 @@
 # zabbix_api/inventory.py
 from .base import ZabbixBase
 from .http.http_api import APIClient
+from .utils.response import get_zabbix_result
 
 
 class ZabbixInventoryMixin():
@@ -30,7 +31,7 @@ class ZabbixInventoryMixin():
 
         async with APIClient(self.api_url) as client:
             response = await client.post("", payload)
-            return response["result"]
+            return get_zabbix_result(response, payload)
 
     async def update_inventory(self, hostid: str | int, key: str, value: int | str):
         """
@@ -52,4 +53,4 @@ class ZabbixInventoryMixin():
 
         async with APIClient(self.api_url) as client:
             response = await client.post("", payload)
-        return response["result"]
+        return get_zabbix_result(response, payload)

@@ -1,8 +1,12 @@
 # zabbix_api/triggers.py
-from .errors.exceptions import ZabbixError
-from .http.http_api import APIClient
-from typing import List
+import logging
 import time
+from typing import List
+
+from .http.http_api import APIClient
+from .utils.response import get_zabbix_result
+
+logger = logging.getLogger(__name__)
 
 
 class ZabbixTriggersMixin():
@@ -29,14 +33,10 @@ class ZabbixTriggersMixin():
             "id": 2
         }
         async with APIClient(self.api_url) as client:
-            print("in api client")
-            print(self.api_url)
+            logger.debug("Requesting trigger.get from %s", self.api_url)
             response = await client.post("", payload)
-            print(response)
-            if "result" in response:
-                return response["result"]
-            else:
-                raise ZabbixError(response["error"]["data"])
+            logger.debug("trigger.get response: %s", response)
+            return get_zabbix_result(response, payload)
 
     async def get_problems_by_trigger_id(self, trigger_id: int | str,  time_from: int = int(time.time()) - 30 * 24 * 3600, time_till: int = int(time.time())):
         """
@@ -62,10 +62,7 @@ class ZabbixTriggersMixin():
         }
         async with APIClient(self.api_url) as client:
             response = await client.post("", payload)
-            if "result" in response:
-                return response["result"]
-            else:
-                raise ZabbixError(response["error"]["data"])
+            return get_zabbix_result(response, payload)
 
     async def get_events_by_trigger_id(self, trigger_id: int | str,  time_from: int = int(time.time()) - 30 * 24 * 3600, time_till: int = int(time.time())):
         """
@@ -93,10 +90,7 @@ class ZabbixTriggersMixin():
         }
         async with APIClient(self.api_url) as client:
             response = await client.post("", payload)
-            if "result" in response:
-                return response["result"]
-            else:
-                raise ZabbixError(response["error"]["data"])
+            return get_zabbix_result(response, payload)
 
     async def get_triggers_by_group_id(self, group_id: str | int) -> List:
         """
@@ -124,10 +118,7 @@ class ZabbixTriggersMixin():
         }
         async with APIClient(self.api_url) as client:
             response = await client.post("", payload)
-            if "result" in response:
-                return response["result"]
-            else:
-                raise ZabbixError(response["error"]["data"])
+            return get_zabbix_result(response, payload)
 
     async def get_problems_by_group_id(self, group_id: int | str) -> List:
         """
@@ -149,5 +140,4 @@ class ZabbixTriggersMixin():
 
         async with APIClient(self.api_url) as client:
             response = await client.post("", payload)
-            if "result" in response:
-                return response["result"]
+            return get_zabbix_result(response, payload)

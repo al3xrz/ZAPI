@@ -1,4 +1,7 @@
+import logging
 import time
+
+logger = logging.getLogger(__name__)
 
 interface_type = {
     "1": "агент",
@@ -101,7 +104,11 @@ def normalize_items(items: list, item_transforms: dict | None = None) -> list:
     return items
 
 
-def normalize_host(host: dict, item_transforms: dict | None = None) -> dict:
+def normalize_host(
+    host: dict,
+    item_transforms: dict | None = None,
+    ignore_private_items: bool = True,
+) -> dict:
     """
     Преобразует сырой словарь host из Zabbix API в структуру для приложения.
 
@@ -117,6 +124,8 @@ def normalize_host(host: dict, item_transforms: dict | None = None) -> dict:
             Передается напрямую в normalize_items(). Если правила не переданы,
             элементы данных фильтруются по key_, но их units/lastvalue не
             преобразуются.
+        ignore_private_items: Если True, элементы данных с key_, начинающимся
+            с "_", исключаются из результата.
 
     Возвращает:
         Новый словарь с нормализованными полями host, interfaces, problems,
@@ -144,7 +153,7 @@ def normalize_host(host: dict, item_transforms: dict | None = None) -> dict:
 
 
             except:
-                print("Ошибка имени/продолжительности проблемы, используем стандартные")
+                logger.warning("Ошибка имени/продолжительности проблемы, используем стандартные")
                 current_problem["name"] = trigger["problem"]["name"]
                 current_problem["duration"] = int(
                     time.time()) - int(trigger["lastchange"])
@@ -164,9 +173,12 @@ def normalize_host(host: dict, item_transforms: dict | None = None) -> dict:
     result["macros"] = host["macros"]
     result["status"] = host["status"]
     # result["scripts"] = host["scripts"]
+    items = host["items"]
+    if ignore_private_items:
+        items = [item for item in items if not item["key_"].startswith("_")]
     result["items"] = normalize_items(
-        list(filter(lambda item: not item["key_"].startswith("_"), host["items"])),
+        items,
         item_transforms,
-    )  # итемы начинающиеся с "_" игнорируем
+    )
     result["last_update"] = host["last_update"]
     return result

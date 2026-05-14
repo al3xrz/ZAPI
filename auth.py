@@ -1,7 +1,12 @@
 # zabbix_api/auth.py
+import logging
+
 from .base import ZabbixBase
-from .errors.exceptions import ZabbixError
 from .http.http_api import APIClient
+from .utils.response import get_zabbix_result
+
+logger = logging.getLogger(__name__)
+
 
 class ZabbixAuthMixin():
     
@@ -29,11 +34,8 @@ class ZabbixAuthMixin():
                 "id": 1, }
         async with APIClient(self.api_url) as client:
             response = await client.post("", payload)
-            print(response)
-            if "result" in response:
-                self.api_key = response["result"]
-            else:
-                raise ZabbixError(response["error"]["data"])
+            logger.debug("user.login response: %s", response)
+            self.api_key = get_zabbix_result(response, payload)
 
     async def logout(self):
         """
@@ -48,4 +50,5 @@ class ZabbixAuthMixin():
         }
         async with APIClient(self.api_url) as client:
             response = await client.post("", payload)
-            print(response)
+            logger.debug("user.logout response: %s", response)
+            get_zabbix_result(response, payload)

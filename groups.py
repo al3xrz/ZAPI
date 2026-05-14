@@ -1,9 +1,13 @@
 # zabbix_api/groups.py
-from .errors.exceptions import ZabbixError, ZabbixNotFoundError
+import logging
+from .errors.exceptions import ZabbixNotFoundError
 from .http.http_api import APIClient
 from datetime import datetime
 from zoneinfo import ZoneInfo
 from .utils.mutations import normalize_host
+from .utils.response import get_zabbix_result
+
+logger = logging.getLogger(__name__)
 
 class ZabbixGroupsMixin():
     async def get_group_id(self, group_name: str) -> str:
@@ -26,9 +30,10 @@ class ZabbixGroupsMixin():
         }
         async with APIClient(self.api_url) as client:
             response = await client.post("", payload)
-            print(response)
-            if len(response["result"]) == 1:
-                return response["result"][0]["groupid"]
+            logger.debug("hostgroup.get response: %s", response)
+            result = get_zabbix_result(response, payload)
+            if len(result) == 1:
+                return result[0]["groupid"]
             else:
                 raise ZabbixNotFoundError(f'Group \"{group_name}\" not found')
     
@@ -45,7 +50,7 @@ class ZabbixGroupsMixin():
         hosts = await self.get_hosts_by_group_id(group_id)
         triggers = await self.get_triggers_by_group_id(group_id)
         problems = await self.get_problems_by_group_id(group_id)
-        # scripts = await self.get_scripts(group_id)
+        scripts = await self.get_scripts(group_id)
         timezone = ZoneInfo("Europe/Moscow")
         for trigger in triggers:
             trigger["problem"] = list(filter(
@@ -55,8 +60,15 @@ class ZabbixGroupsMixin():
                 lambda trigger: trigger["hosts"][0]["hostid"] == host["hostid"], triggers))
             host["last_update"] = datetime.now(
                 timezone).strftime('%Y-%m-%d %H:%M:%S')
-        # for host in hosts:
-        #     host["scripts"] = scripts
+        for host in hosts:
+            host["scripts"] = scripts
         transforms = item_transforms if item_transforms is not None else self.item_transforms
-        results = [normalize_host(host, transforms) for host in hosts]
+        results = [
+            normalize_host(
+                host,
+                transforms,
+                ignore_private_items=self.ignore_private_items,
+            )
+            for host in hosts
+        ]
         return results
