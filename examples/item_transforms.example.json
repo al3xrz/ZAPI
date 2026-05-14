@@ -1,0 +1,93 @@
+{
+  "icmppingsec[{$IP_ROUTER},10,1000,64,5000,avg]": {
+    "units": "ms",
+    "converter": "number",
+    "round": 2
+  },
+  "icmppingsec[,10,1000,64,5000,avg]": {
+    "units": "ms",
+    "converter": "number",
+    "round": 2
+  },
+  "icmppingsec[{$VIPNET},10,1000,64,5000,avg]": {
+    "units": "ms",
+    "converter": "number",
+    "round": 2
+  },
+  "icmppingsec": {
+    "units": "ms",
+    "converter": "number",
+    "round": 2
+  },
+  "azimut.heater": {
+    "units": "",
+    "converter": "on_off"
+  },
+  "azimut.cooler": {
+    "units": "",
+    "converter": "on_off"
+  },
+  "azimut.input.voltage": {
+    "units": "V",
+    "converter": "number",
+    "round": 2
+  },
+  "delta2420.acc_u": {
+    "units": "V",
+    "converter": "number",
+    "round": 2
+  },
+  "delta2420.input_u": {
+    "units": "V",
+    "converter": "number",
+    "round": 2
+  },
+  "ccu.pwr": {
+    "units": "V",
+    "converter": "number",
+    "round": 2
+  },
+  "ccu.accu_charge": {
+    "units": "%",
+    "converter": "number",
+    "round": null
+  },
+  "delta2420.acc_level": {
+    "units": "%",
+    "converter": "number",
+    "round": null
+  },
+  "ccu.temp": {
+    "units": "C",
+    "converter": "number",
+    "round": null
+  },
+  "azimut.temp1": {
+    "units": "C",
+    "converter": "number",
+    "round": null
+  },
+  "rssi": {
+    "units": "db",
+    "converter": "number",
+    "round": null
+  },
+  "delta2420.output_i": {
+    "units": "A",
+    "converter": "number",
+    "round": 2
+  },
+  "delta2420.input_i": {
+    "units": "A",
+    "converter": "number",
+    "round": 2
+  },
+  "ut.duplo_last_viol": {
+    "units": "",
+    "converter": "duration"
+  },
+  "ut.duplo_last_fix": {
+    "units": "",
+    "converter": "duration"
+  }
+}
